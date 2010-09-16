@@ -91,7 +91,15 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
+    'django_nose',
     'reversion',
     'reversion_relations',
     'aplicacao',
 )
+
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+NOSE_ARGS = ['--with-coverage', '--with-doctest', '--doctest-tests', '--doctest-extension=txt'] # --doctest-fixtures, --with-profile
+#NOSE_PLUGINS = []
+SKIP_SOUTH_TESTS = True
+SOUTH_TESTS_MIGRATE = False
+

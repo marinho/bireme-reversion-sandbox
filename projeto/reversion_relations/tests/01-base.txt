@@ -24,7 +24,6 @@ Thinking on some instances:
 
     - You are the store
     - Nike is a supplier
-    - Grendene is another supplier
     - The first purchase you made from Nike was in 2010-03-10
     - So, at 2010-04-30 Nike changed their location
     - And now you made a new purshase
@@ -68,14 +67,82 @@ So we need for:
     - A new form field: ReversionChoiceField
     - A new widget: ReversionChoiceWidget
 
+Application in PYTHONPATH (as pluggable as possible)
+----------------------------------------------------
+
+    >>> import reversion_relations
+
 ReversionForeignKey
 -------------------
+
+    >>> from reversion_relations.fields import ReversionForeignKey
+
+    >>> from reversion_relations.tests.test_models import Supplier, Purchase, create_tables
+    >>> create_tables()
+
+    >>> import datetime
+
+    >>> nike = Supplier.objects.create(name='Nike', location='Av. Paulista, Centro, Sao Paulo - SP')
+
+The first purchase was joined to supplier when it had a location...
+
+    >>> purchase1 = Purchase.objects.create(supplier=nike, date=datetime.date(2010, 3, 10))
+
+    >>> nike.location = 'Av. Brasil, Centro, Rio de Janeiro - RJ'
+    >>> nike.save()
+
+And the second purchase was joined after supplier changed its location
+
+    >>> purchase2 = Purchase.objects.create(supplier=nike, date=datetime.date(2010, 4, 30))
+
+Setting supplier on a new object, before save...
+
+    >>> purchase3 = Purchase()
+    >>> purchase3.supplier = nike
+    >>> purchase3.date = datetime.date(2010, 5, 9)
+
+It is just the related object
+
+    >>> purchase3.supplier
+    <Supplier: Nike>
+
+    >>> purchase3.save()
+
+Checking after saved
+
+    >>> purchase3.supplier
+    <Supplier: Nike>
+
+Getting objects again...
+
+    >>> nike = Supplier.objects.get(pk=nike.pk)
+    >>> purchase1 = Purchase.objects.get(pk=purchase1.pk)
+    >>> purchase2 = Purchase.objects.get(pk=purchase2.pk)
+
+    >>> nike.location
+    u'Av. Brasil, Centro, Rio de Janeiro - RJ'
+
+    >>> purchase1.supplier
+    <Supplier: Nike>
+
+    >>> purchase1.supplier.location
+    u'Av. Paulista, Centro, Sao Paulo - SP'
+
+    >>> purchase2.supplier
+    <Supplier: Nike>
+
+    >>> purchase2.supplier.location
+    u'Av. Brasil, Centro, Rio de Janeiro - RJ'
 
 ReversionChoiceField
 --------------------
 
+    >>> from reversion_relations.fields import ReversionChoiceField
+
 ReversionChoiceWidget
 ---------------------
+
+    >>> from reversion_relations.fields import ReversionChoiceWidget
 
 Working no Admin
 ----------------
