@@ -123,13 +123,13 @@ Getting objects again...
     u'Av. Brasil, Centro, Rio de Janeiro - RJ'
 
     >>> purchase1.supplier
-    <Supplier: Nike>
+    <ReversionProxy: Nike>
 
     >>> purchase1.supplier.location
     u'Av. Paulista, Centro, Sao Paulo - SP'
 
     >>> purchase2.supplier
-    <Supplier: Nike>
+    <ReversionProxy: Nike>
 
     >>> purchase2.supplier.location
     u'Av. Brasil, Centro, Rio de Janeiro - RJ'
@@ -144,9 +144,13 @@ ReversionChoiceWidget
 
     >>> from reversion_relations.fields import ReversionChoiceWidget
 
+Reversed attribute related (something_set)
+------------------------------------------
+
 Working no Admin
 ----------------
 
 Working on form on single view/template
 ---------------------------------------
+
 
