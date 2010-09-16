@@ -1,0 +1,41 @@
+BASE
+====
+
+This application has the mission to use django-reversion functions to make a
+ForeignKey-like field to make foreign relationships to objects withouth lost
+their informations as they were when the relation has made.
+
+The functions of this application are basically the following ones:
+
+- A new model field
+- Its respective form field
+- Its respective form widget
+
+This is the common way to make a foreign relation:
+
+    ----------------------------------                    -------------------
+    |            Purchase            |------------------->|     Supplier    |
+    ---------------------------------- 0..*          0..1 -------------------
+    | supplier: ForeignKey(Supplier) |                    | primary_key     |
+    | other fields...                |                    | other fields... |
+    ----------------------------------                    -------------------
+
+Thinking on some instances:
+
+    - You are the store
+    - Nike is a supplier
+    - Grendene is another supplier
+    - The first purchase you made from Nike was in 2010-03-10
+    - So, at 2010-04-30 Nike changed their location
+    - And now you made a new purshase
+    - So, you have a problem: they are asking for a bigger payment for billing
+    - But you know they were so much nearer to you than they were when you made the previous purchase
+    - So, you are going to confirm their location some months ago
+    - And you notice you haven't their location because it has changed
+    - So, you have a problem
+
+The problem: if supplier changed its location, sometime in the future nobody
+will know where pur
+
+The workflow of this application can be viewed below:
+
