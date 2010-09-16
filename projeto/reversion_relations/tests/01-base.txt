@@ -37,5 +37,49 @@ Thinking on some instances:
 The problem: if supplier changed its location, sometime in the future nobody
 will know where pur
 
-The workflow of this application can be viewed below:
+The workflow of this application should be as following:
+
+    ------------                                            ------------
+    | Purchase |                                            | Supplier |
+    ------------                                            ------------
+          | 0..*                                                1 ^
+          |                                                       |
+          |             0..1 ------------------- 0..*             |
+          ------------------>|     Version     |-------------------
+              ForeignKey     -------------------  generic relation
+                             | serialized JSON |
+                             -------------------
+
+Version is a class from django-reversion (reversion.models.Version).
+
+The serialization is well-made by django-reversion but the ForeignKey you have to make
+by yourself.
+
+But the solution above is not enough, because:
+
+    - The builtin ForeignKey model field will not return the Supplier's informations
+      so easy as it works for direct relation
+    - The default work of ForeignKey on forms (as form field as form widget) will also
+      not work as we'd like.
+
+So we need for:
+
+    - A new extended ForeignKey model field: ReversionForeignKey
+    - A new form field: ReversionChoiceField
+    - A new widget: ReversionChoiceWidget
+
+ReversionForeignKey
+-------------------
+
+ReversionChoiceField
+--------------------
+
+ReversionChoiceWidget
+---------------------
+
+Working no Admin
+----------------
+
+Working on form on single view/template
+---------------------------------------
 
