@@ -6,11 +6,12 @@ from django.contrib.flatpages.models import FlatPage
 from django.contrib.contenttypes import generic
 from django.db.models.sql.query import setup_join_cache
 
+from reversion.revisions import revision
 from reversion_relations.fields import ReversionForeignKey
 
 class Supplier(models.Model):
     class Meta:
-        app_label = 'temporary_test'
+        app_label = 'reversion_relations'
 
     name = models.CharField(max_length=100)
     location = models.TextField(blank=True)
@@ -24,7 +25,7 @@ class Supplier(models.Model):
 
 class Purchase(models.Model):
     class Meta:
-        app_label = 'temporary_test'
+        app_label = 'reversion_relations'
 
     date = models.DateTimeField(blank=True, default=datetime.datetime.now)
     supplier = ReversionForeignKey(Supplier, null=True, blank=True)
@@ -52,4 +53,6 @@ def create_tables():
     for statement in sql:
         cursor.execute(statement)
 
+if not revision.is_registered(Supplier): revision.register(Supplier)
+if not revision.is_registered(Purchase): revision.register(Purchase)
 
