@@ -122,14 +122,14 @@ Getting objects again...
     >>> nike.location
     u'Av. Brasil, Centro, Rio de Janeiro - RJ'
 
-    >>> purchase1.supplier
-    <ReversionProxy: Nike>
+    >>> repr(purchase1.supplier) == '<ReversionProxy: supplier #%s>' % nike.pk
+    True
 
     >>> purchase1.supplier.location
     u'Av. Paulista, Centro, Sao Paulo - SP'
 
-    >>> purchase2.supplier
-    <ReversionProxy: Nike>
+    >>> repr(purchase2.supplier) == '<ReversionProxy: supplier #%s>' % nike.pk
+    True
 
     >>> purchase2.supplier.location
     u'Av. Brasil, Centro, Rio de Janeiro - RJ'

@@ -79,7 +79,9 @@ class ReversionRelatedObjectDescriptor(ReverseSingleRelatedObjectDescriptor):
         try:
             value = getattr(instance, cache_name)
         except AttributeError:
-            value = None
+            value = Version.objects.get(
+                    pk=getattr(instance, self.field.attname)
+                    )
 
         if isinstance(value, Version):
             value = ReversionProxy(value)
@@ -105,6 +107,19 @@ class ReversionProxy(object):
 
     def __init__(self, version=None):
         self.version = version
+
+    @property
+    def object_version(self):
+        if not hasattr(self, '_object_version'):
+            self._object_version = self.version.get_object_version()
+
+        return self._object_version
+
+    def __getattr__(self, name):
+        return getattr(self.object_version.object, name)
+
+    def __repr__(self):
+        return '<%s: %s #%s>'%(self.__class__.__name__, self.version.content_type.model, self.object_version.object.pk)
 
 class ReversionChoiceField(FormField):
     pass
