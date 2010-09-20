@@ -204,6 +204,10 @@ class ReversionChoiceField(ModelChoiceField):
         # Swap Version queryset for foreign model class queryset
         if self.indirect_to:
             queryset = self.indirect_to.objects.all()
+            if self.indirect_to._meta.ordering:
+                queryset = queryset.order_by(*self.indirect_to._meta.ordering)
+            else:
+                queryset = queryset.order_by('pk')
         else:
             queryset = None
 

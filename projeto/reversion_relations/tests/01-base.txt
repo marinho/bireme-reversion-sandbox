@@ -171,8 +171,8 @@ This should work on single view and admin, because both use Django's forms API
     >>> print form1['supplier']
     <select name="supplier" id="id_supplier">
     <option value="" selected="selected">---------</option>
-    <option value="2">Grendene</option>
     <option value="1">Nike</option>
+    <option value="2">Grendene</option>
     </select>
 
     >>> form2 = FormPurchase(instance=purchase1)
@@ -180,8 +180,8 @@ This should work on single view and admin, because both use Django's forms API
     >>> print form2['supplier']
     <select name="supplier" id="id_supplier">
     <option value="">---------</option>
-    <option value="2">Grendene</option>
     <option value="1" selected="selected">Nike</option>
+    <option value="2">Grendene</option>
     </select>
 
     >>> form3 = FormPurchase({'supplier': unicode(grendene.pk), 'date':'2010-06-21'})
