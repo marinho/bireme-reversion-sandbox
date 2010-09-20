@@ -1,6 +1,8 @@
 from django.db.models.base import ModelBase
 from django.db.models import ForeignKey, Field
-from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor, RelatedField
+from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
+from django.db.models.fields.related import RelatedField
+from django.db.models.fields.related import ForeignRelatedObjectsDescriptor
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core import serializers
@@ -27,7 +29,13 @@ class ReversionForeignKey(ForeignKey):
         super(ReversionForeignKey, self).contribute_to_class(cls, name)
 
         # Replaces field descriptor
-        setattr(cls, self.name, ReversionRelatedObjectDescriptor(self))
+        setattr(cls, self.name, ReversionSingleObjectDescriptor(self))
+
+    @property
+    def indirect_content_type(self):
+        if not getattr(self, '_indirect_content_type', None):
+            self._indirect_content_type = ContentType.objects.get_for_model(self.indirect_to)
+        return self._indirect_content_type
 
     def pre_save(self, model_instance, add):
         try:
@@ -37,16 +45,16 @@ class ReversionForeignKey(ForeignKey):
 
         if not obj: return None
 
-        # Gets the latest version of this object
-        c_type = ContentType.objects.get_for_model(self.indirect_to)
-
         # Creates a version for current state
         revision.start()
         obj.save()
         revision.end()
 
         # Gets the latest version (the current one was created above)
-        version = Version.objects.filter(content_type=c_type, object_id=obj.pk).latest('pk')
+        version = Version.objects.filter(
+                content_type=self.indirect_content_type,
+                object_id=obj.pk,
+                ).latest('pk')
 
         # Returns version's id
         return version.pk
@@ -55,13 +63,13 @@ class ReversionForeignKey(ForeignKey):
         defaults = {
                 'form_class': ReversionChoiceField,
                 'indirect_to': self.indirect_to,
-                #'initial': 
                 }
         defaults.update(kwargs)
 
         return super(ReversionForeignKey, self).formfield(**defaults)
 
     def validate(self, value, model_instance):
+        # IMPORTANT: This must be to ForeignKey's superclass to ignore its own override
         super(ForeignKey, self).validate(value, model_instance)
 
         if value is None:
@@ -74,7 +82,49 @@ class ReversionForeignKey(ForeignKey):
             raise ValidationError(self.error_messages['invalid'] % {
                 'model': self.rel.to._meta.verbose_name, 'pk': value})
 
-class ReversionRelatedObjectDescriptor(ReverseSingleRelatedObjectDescriptor):
+    def contribute_to_related_class(self, cls, related):
+        """This method is based on ForeignKey's method with same name, but have to be
+        here to override it and implement the relationship direct to related class,
+        instead of Version."""
+
+        cls = self.indirect_to
+
+        # Internal FK's - i.e., those with a related name ending with '+' -
+        # don't get a related descriptor.
+        if not self.rel.is_hidden():
+            setattr(cls, related.get_accessor_name(), ReversionRelatedObjectDescriptor(related))
+        if self.rel.field_name is None:
+            self.rel.field_name = cls._meta.pk.name
+
+class ReversionProxy(object):
+    version = None
+
+    def __init__(self, version=None):
+        self.version = version
+
+    @property
+    def object_version(self):
+        if not hasattr(self, '_object_version'):
+            self._object_version = self.version.get_object_version()
+
+        return self._object_version
+
+    def __getattr__(self, name):
+        if name in ('_object_version','version'):
+            raise AttributeError
+
+        return getattr(self.object_version.object, name)
+
+    def __repr__(self):
+        return '<%s: %s #%s>'%(self.__class__.__name__, self.version.content_type.model, self.object_version.object.pk)
+
+    def __unicode__(self):
+        return unicode(self.version)
+
+    def __str__(self):
+        return str(self.version)
+
+class ReversionSingleObjectDescriptor(ReverseSingleRelatedObjectDescriptor):
     """Take more details from the superclass."""
 
     def __init__(self, field_with_rel):
@@ -112,37 +162,28 @@ class ReversionRelatedObjectDescriptor(ReverseSingleRelatedObjectDescriptor):
             setattr(instance, self.field.attname, None)
             setattr(instance, self.field.get_cache_name(), None)
 
-class ReversionProxy(object):
-    version = None
+class ReversionRelatedObjectDescriptor(ForeignRelatedObjectsDescriptor):
+    def create_manager(self, instance, superclass):
+        """This function is not so full as Django does. If we have necessity we can enhance
+        it to support creating and clearing objects."""
 
-    def __init__(self, version=None):
-        self.version = version
+        rel_field = self.related.field
+        rel_model = self.related.model
 
-    @property
-    def object_version(self):
-        if not hasattr(self, '_object_version'):
-            self._object_version = self.version.get_object_version()
+        conditions = {
+                '%s__content_type' % rel_field.name: rel_field.indirect_content_type,
+                '%s__object_id' % rel_field.name: instance.pk,
+                }
 
-        return self._object_version
+        queryset = rel_model._default_manager.filter(**conditions)
 
-    def __getattr__(self, name):
-        if name in ('_object_version','version'):
-            raise AttributeError
-
-        return getattr(self.object_version.object, name)
-
-    def __repr__(self):
-        return '<%s: %s #%s>'%(self.__class__.__name__, self.version.content_type.model, self.object_version.object.pk)
-
-    def __unicode__(self):
-        return unicode(self.version)
-
-    def __str__(self):
-        return str(self.version)
+        return queryset
 
 # ------- FORMS -------
 
 class ReversionChoiceWidget(Select):
+    """Form Widget class mostly used by ReversionForeignKey fields."""
+
     def render(self, name, value, *args, **kwargs):
         # Swap initial value to pk of real reference object
         if value:
@@ -152,6 +193,8 @@ class ReversionChoiceWidget(Select):
         return super(ReversionChoiceWidget, self).render(name, value, *args, **kwargs)
 
 class ReversionChoiceField(ModelChoiceField):
+    """Form Field class mostly used by ReversionForeignKey fields."""
+
     widget = ReversionChoiceWidget
     indirect_to = None
 

@@ -196,4 +196,19 @@ This should work on single view and admin, because both use Django's forms API
 Reversed attribute related (something_set)
 ------------------------------------------
 
+This function is not so full as Django does. If we have necessity we can enhance it to
+support creating and clearing objects.
+
+    >>> from django.contrib.contenttypes.models import ContentType
+
+    >>> from_related_manager = nike.purchase_set.order_by('pk').values()
+    >>> from_common_way = Purchase.objects.filter(
+    ...     supplier__content_type=ContentType.objects.get_for_model(Supplier),
+    ...     supplier__object_id=nike.pk,
+    ... ).order_by('pk').values()
+
+    >>> list(from_related_manager) == list(from_common_way)
+    True
+    
+    True
 
