@@ -2,14 +2,14 @@ from django.contrib import admin
 
 from reversion.admin import VersionAdmin
 
-from models import Instituicao, Documento
+from models import Supplier, Purchase
 
-class AdminInstituicao(VersionAdmin):
+class AdminSupplier(VersionAdmin):
     pass
 
-class AdminDocumento(VersionAdmin):
-    pass
+class AdminPurchase(VersionAdmin):
+    list_display = ('date','supplier','user')
 
-admin.site.register(Instituicao, AdminInstituicao)
-admin.site.register(Documento, AdminDocumento)
+admin.site.register(Supplier, AdminSupplier)
+admin.site.register(Purchase, AdminPurchase)
 

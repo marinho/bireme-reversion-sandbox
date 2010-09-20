@@ -5,6 +5,7 @@ from django.core.management.color import no_style
 from django.contrib.flatpages.models import FlatPage
 from django.contrib.contenttypes import generic
 from django.db.models.sql.query import setup_join_cache
+from django.contrib.auth.models import User
 
 from reversion.revisions import revision
 from reversion_relations.fields import ReversionForeignKey
@@ -29,6 +30,7 @@ class Purchase(models.Model):
 
     date = models.DateTimeField(blank=True, default=datetime.datetime.now)
     supplier = ReversionForeignKey(Supplier, null=True, blank=True)
+    user = models.ForeignKey(User, null=True, blank=True)
 
 setup_join_cache(Supplier)
 setup_join_cache(Purchase)

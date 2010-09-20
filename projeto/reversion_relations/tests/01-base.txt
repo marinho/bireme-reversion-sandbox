@@ -83,6 +83,7 @@ ReversionForeignKey
     >>> import datetime
 
     >>> nike = Supplier.objects.create(name='Nike', location='Av. Paulista, Centro, Sao Paulo - SP')
+    >>> grendene = Supplier.objects.create(name='Grendene', location='Rua Joao da Silva, Centro, Belo Horizonte - MG')
 
 The first purchase was joined to supplier when it had a location...
 
@@ -125,32 +126,72 @@ Getting objects again...
     >>> repr(purchase1.supplier) == '<ReversionProxy: supplier #%s>' % nike.pk
     True
 
+    >>> print(purchase1.supplier)
+    Nike
+
     >>> purchase1.supplier.location
     u'Av. Paulista, Centro, Sao Paulo - SP'
 
     >>> repr(purchase2.supplier) == '<ReversionProxy: supplier #%s>' % nike.pk
     True
 
+    >>> print(purchase2.supplier)
+    Nike
+
     >>> purchase2.supplier.location
     u'Av. Brasil, Centro, Rio de Janeiro - RJ'
 
-ReversionChoiceField
---------------------
+ReversionChoiceField and ReversionChoiceWidget
+----------------------------------------------
 
-    >>> from reversion_relations.fields import ReversionChoiceField
+    >>> from reversion_relations.fields import ReversionChoiceField, ReversionChoiceWidget
+    >>> from django import forms
 
-ReversionChoiceWidget
----------------------
+    >>> field = ReversionChoiceField(queryset=None, initial=grendene.pk)
 
-    >>> from reversion_relations.fields import ReversionChoiceWidget
+    >>> field.widget.__class__.__name__ == 'ReversionChoiceWidget'
+    True
+
+This should work on single view and admin, because both use Django's forms API
+
+    >>> class FormPurchase(forms.ModelForm):
+    ...     class Meta:
+    ...         model = Purchase
+
+    >>> FormPurchase.base_fields['supplier'].__class__.__name__ == 'ReversionChoiceField'
+    True
+
+    >>> form1 = FormPurchase()
+
+    >>> form1.fields['supplier'].__class__.__name__ == 'ReversionChoiceField'
+    True
+
+    >>> print form1['supplier']
+    <select name="supplier" id="id_supplier">
+    <option value="" selected="selected">---------</option>
+    <option value="2">Grendene</option>
+    <option value="1">Nike</option>
+    </select>
+
+    >>> form2 = FormPurchase(instance=purchase1)
+   
+    >>> print form2['supplier']
+    <select name="supplier" id="id_supplier">
+    <option value="">---------</option>
+    <option value="2">Grendene</option>
+    <option value="1" selected="selected">Nike</option>
+    </select>
+
+    >>> form3 = FormPurchase({'supplier': unicode(grendene.pk), 'date':'2010-06-21'})
+    >>> form3.is_valid()
+    True
+
+    >>> purchase4 = form3.save()
+
+    >>> purchase4.supplier == grendene
+    True
 
 Reversed attribute related (something_set)
 ------------------------------------------
-
-Working no Admin
-----------------
-
-Working on form on single view/template
----------------------------------------
 
 

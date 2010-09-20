@@ -1,8 +1,10 @@
 import datetime
 
 from django.db import models
+from django.contrib.auth.models import User
 
 from reversion_relations.fields import ReversionForeignKey
+from reversion.revisions import revision
 
 class Supplier(models.Model):
     name = models.CharField(max_length=100)
@@ -18,4 +20,8 @@ class Supplier(models.Model):
 class Purchase(models.Model):
     date = models.DateTimeField(blank=True, default=datetime.datetime.now)
     supplier = ReversionForeignKey(Supplier, null=True, blank=True)
+    user = models.ForeignKey(User, null=True, blank=True)
+
+if not revision.is_registered(Supplier): revision.register(Supplier)
+if not revision.is_registered(Purchase): revision.register(Purchase)
 

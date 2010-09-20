@@ -1,18 +1,21 @@
 from django.db.models.base import ModelBase
 from django.db.models import ForeignKey, Field
 from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor, RelatedField
-from django.forms import Field as FormField, Widget
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core import serializers
+from django.forms import ModelChoiceField, Select
 
 from reversion.models import Version, Revision
 from reversion.revisions import revision
+
+# ------- MODELS -------
 
 class ReversionForeignKey(ForeignKey):
     def __init__(self, to, **kwargs):
         """Here we must to store indirect object type to use it later"""
 
+        # Stores indirect model classe relationship
         self.indirect_to = to
         self.indirect_kwargs = {
             'db_index': kwargs.pop('db_index', None),
@@ -37,32 +40,39 @@ class ReversionForeignKey(ForeignKey):
         # Gets the latest version of this object
         c_type = ContentType.objects.get_for_model(self.indirect_to)
 
-        try:
-            version = Version.objects.filter(content_type=c_type, object_id=obj.pk).latest('pk')
-        except ObjectDoesNotExist:
-            # If there is no version available, creates one
-            revision.start()
-            obj.save()
-            revision.end()
+        # Creates a version for current state
+        revision.start()
+        obj.save()
+        revision.end()
 
-            version = Version.objects.filter(content_type=c_type, object_id=obj.pk).latest('pk')
-
-            """new_revision = Revision.objects.create(user=revision._state.user, comment=revision._state.comment)
-
-            registration_info = revision.get_registration_info(obj.__class__)
-            serialized_data = serializers.serialize(registration_info.format, [obj], fields=registration_info.fields)
-
-            version = Version.objects.create(
-                    revision=new_revision,
-                    content_type=c_type,
-                    object_id=obj.pk,
-                    format=registration_info.format,
-                    serialized_data=serialized_data,
-                    object_repr=unicode(obj),
-                    )"""
+        # Gets the latest version (the current one was created above)
+        version = Version.objects.filter(content_type=c_type, object_id=obj.pk).latest('pk')
 
         # Returns version's id
         return version.pk
+
+    def formfield(self, **kwargs):
+        defaults = {
+                'form_class': ReversionChoiceField,
+                'indirect_to': self.indirect_to,
+                #'initial': 
+                }
+        defaults.update(kwargs)
+
+        return super(ReversionForeignKey, self).formfield(**defaults)
+
+    def validate(self, value, model_instance):
+        super(ForeignKey, self).validate(value, model_instance)
+
+        if value is None:
+            return
+
+        # This is really seemed to ForeignKey validation, but makes from indirect model class (not Versions)
+        qs = self.indirect_to._default_manager.filter(**{self.rel.field_name:value})
+        qs = qs.complex_filter(self.rel.limit_choices_to)
+        if not qs.exists():
+            raise ValidationError(self.error_messages['invalid'] % {
+                'model': self.rel.to._meta.verbose_name, 'pk': value})
 
 class ReversionRelatedObjectDescriptor(ReverseSingleRelatedObjectDescriptor):
     """Take more details from the superclass."""
@@ -116,15 +126,43 @@ class ReversionProxy(object):
         return self._object_version
 
     def __getattr__(self, name):
+        if name in ('_object_version','version'):
+            raise AttributeError
+
         return getattr(self.object_version.object, name)
 
     def __repr__(self):
         return '<%s: %s #%s>'%(self.__class__.__name__, self.version.content_type.model, self.object_version.object.pk)
 
-class ReversionChoiceField(FormField):
-    pass
+    def __unicode__(self):
+        return unicode(self.version)
 
-class ReversionChoiceWidget(Widget):
-    pass
+    def __str__(self):
+        return str(self.version)
 
+# ------- FORMS -------
+
+class ReversionChoiceWidget(Select):
+    def render(self, name, value, *args, **kwargs):
+        # Swap initial value to pk of real reference object
+        if value:
+            version = Version.objects.filter(pk=value).values_list('object_id', flat=True)[0]
+            value = version[0]
+
+        return super(ReversionChoiceWidget, self).render(name, value, *args, **kwargs)
+
+class ReversionChoiceField(ModelChoiceField):
+    widget = ReversionChoiceWidget
+    indirect_to = None
+
+    def __init__(self, queryset, *args, **kwargs):
+        self.indirect_to = kwargs.pop('indirect_to', None)
+
+        # Swap Version queryset for foreign model class queryset
+        if self.indirect_to:
+            queryset = self.indirect_to.objects.all()
+        else:
+            queryset = None
+
+        super(ReversionChoiceField, self).__init__(queryset, *args, **kwargs)
 
