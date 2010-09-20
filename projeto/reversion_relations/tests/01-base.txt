@@ -5,6 +5,8 @@ This application has the mission to use django-reversion functions to make a
 ForeignKey-like field to make foreign relationships to objects withouth lost
 their informations as they were when the relation has made.
 
+The version of Django this test and package were made for is 1.2.3 or higher
+
 The functions of this application are basically the following ones:
 
 - A new model field
