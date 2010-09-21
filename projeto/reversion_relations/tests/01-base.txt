@@ -183,6 +183,14 @@ This should work on single view and admin, because both use Django's forms API
     <option value="1" selected="selected">Nike</option>
     <option value="2">Grendene</option>
     </select>
+    
+    >>> purchase1 = form2.save()
+    >>> purchase1 = Purchase.objects.get(pk=purchase1.pk)
+    
+Should have changed to 'Rio de janeiro" after form2.save()?    
+    
+    >>> purchase1.supplier.location
+    u'Av. Paulista, Centro, Sao Paulo - SP'
 
     >>> form3 = FormPurchase({'supplier': unicode(grendene.pk), 'date':'2010-06-21'})
     >>> form3.is_valid()
