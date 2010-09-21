@@ -183,22 +183,52 @@ This should work on single view and admin, because both use Django's forms API
     <option value="1" selected="selected">Nike</option>
     <option value="2">Grendene</option>
     </select>
-    
-    >>> purchase1 = form2.save()
-    >>> purchase1 = Purchase.objects.get(pk=purchase1.pk)
-    
-Should have changed to 'Rio de janeiro" after form2.save()?    
-    
-    >>> purchase1.supplier.location
-    u'Av. Paulista, Centro, Sao Paulo - SP'
 
     >>> form3 = FormPurchase({'supplier': unicode(grendene.pk), 'date':'2010-06-21'})
     >>> form3.is_valid()
     True
 
     >>> purchase4 = form3.save()
-
     >>> purchase4.supplier == grendene
+    True
+
+Testing location changed
+
+    >>> purchase4.supplier.location
+    u'Rua Joao da Silva, Centro, Belo Horizonte - MG'
+
+    >>> grendene.location = 'Av. do Contorno, Lagoinha, Belo Horizonte - MG'
+    >>> grendene.save()
+
+Not changed...
+
+    >>> purchase4.supplier.location == u'Rua Joao da Silva, Centro, Belo Horizonte - MG'
+    True
+
+    >>> purchase4.save()
+
+Not changed...
+
+    >>> purchase4.supplier.location == u'Rua Joao da Silva, Centro, Belo Horizonte - MG'
+    True
+
+    >>> form4 = FormPurchase({'supplier': unicode(grendene.pk), 'date':'2010-06-23'}, instance=purchase4)
+    >>> form4.is_valid()
+    True
+
+    >>> purchase5 = form4.save()
+
+Not changed...
+
+    >>> purchase4.supplier.location == u'Rua Joao da Silva, Centro, Belo Horizonte - MG'
+    True
+
+Just now it has been changed
+
+    >>> purchase5.supplier = grendene
+    >>> purchase5.save()
+
+    >>> purchase4.supplier.location == u'Av. do Contorno, Lagoinha, Belo Horizonte - MG'
     True
 
 Reversed attribute related (something_set)
