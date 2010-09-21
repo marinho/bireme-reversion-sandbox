@@ -194,8 +194,8 @@ This should work on single view and admin, because both use Django's forms API
 
 Testing location changed
 
-    >>> purchase4.supplier.location
-    u'Rua Joao da Silva, Centro, Belo Horizonte - MG'
+    >>> purchase4.supplier.location == u'Rua Joao da Silva, Centro, Belo Horizonte - MG'
+    True
 
     >>> grendene.location = 'Av. do Contorno, Lagoinha, Belo Horizonte - MG'
     >>> grendene.save()
@@ -220,7 +220,7 @@ Not changed...
 
 Not changed...
 
-    >>> purchase4.supplier.location == u'Rua Joao da Silva, Centro, Belo Horizonte - MG'
+    >>> purchase5.supplier.location == u'Rua Joao da Silva, Centro, Belo Horizonte - MG'
     True
 
 Just now it has been changed
@@ -228,7 +228,11 @@ Just now it has been changed
     >>> purchase5.supplier = grendene
     >>> purchase5.save()
 
-    >>> purchase4.supplier.location == u'Av. do Contorno, Lagoinha, Belo Horizonte - MG'
+    >>> purchase5.supplier.location == u'Av. do Contorno, Lagoinha, Belo Horizonte - MG'
+    True
+
+    >>> purchase5 = Purchase.objects.get(pk=purchase4.pk)
+    >>> purchase5.supplier.location == u'Av. do Contorno, Lagoinha, Belo Horizonte - MG'
     True
 
 Reversed attribute related (something_set)
