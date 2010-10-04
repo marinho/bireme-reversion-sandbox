@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 # Django settings for projeto project.
 
 DEBUG = True
@@ -89,12 +90,14 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
-    # Uncomment the next line to enable the admin:
     'django.contrib.admin',
+    'django.contrib.flatpages',
     'django_nose',
     'reversion',
     'reversion_relations',
     'aplicacao',
+    'polyglot',
+    'flatpages_polyglot',
 )
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
@@ -102,4 +105,16 @@ NOSE_ARGS = ['--with-coverage', '--with-doctest', '--doctest-tests', '--doctest-
 #NOSE_PLUGINS = []
 SKIP_SOUTH_TESTS = True
 SOUTH_TESTS_MIGRATE = False
+
+_ = lambda a: a
+
+MANAGED_LANGUAGES_CHOICES = (
+    (u'en', _(u'English')),
+    (u'es', _(u'Español')),
+    (u'pt-BR', _(u'Portuguese')),
+)
+TARGET_LANGUAGES = MANAGED_LANGUAGES_CHOICES[1:] # exlude source language
+MANAGED_LANGUAGES = [code for code, label in MANAGED_LANGUAGES_CHOICES]
+# TODO: implement this as default on new submission forms
+DEFAULT_SUBMISSION_LANGUAGE = u'pt-BR'
 

@@ -1,0 +1,10 @@
+This project exists with following goals:
+
+- Demonstrate how to implement django-reversion [1]
+- Implement django-reversion together with django-polyglot [2]
+- Implement a pluggable application that uses django-reversion to make a ForeignKey that keeps current version as related object [3]
+
+[1] http://github.com/etianen/django-reversion
+[2] http://reddes.bvsalud.org/projects/clinical-trials/browser/trunk/opentrials/polyglot
+[3] http://github.com/marinho/bireme-reversion-sandbox/tree/master/projeto/reversion_relations/
+
