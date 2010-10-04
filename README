@@ -4,7 +4,22 @@ This project exists with following goals:
 - Implement django-reversion together with django-polyglot [2]
 - Implement a pluggable application that uses django-reversion to make a ForeignKey that keeps current version as related object [3]
 
-[1] http://github.com/etianen/django-reversion
+### Using reversion manually
+
+    # models.py
+    from reversion.revisions import revision
+    if not revision.is_registered(MyModelClass): revision.register(MyModelClass)
+
+    # Anywhere at the code
+    from reversion.revisions import revision
+    revision.start()
+    obj.save()
+    ...
+    # anyone and many as necessary can be saved
+    ...
+    revision.end()
+
+[1] htte://github.com/etianen/django-reversion
 [2] http://reddes.bvsalud.org/projects/clinical-trials/browser/trunk/opentrials/polyglot
 [3] http://github.com/marinho/bireme-reversion-sandbox/tree/master/projeto/reversion_relations/
 
